@@ -1,15 +1,52 @@
 import "../../style/post-item/PostItem.css";
 import Avatar from "@mui/material/Avatar";
+import React, {useState, useEffect} from "react";
+import {db, serverTimestamp} from "../../firebaseConfig";
+import {collection, onSnapshot, query, addDoc} from 'firebase/firestore';
 
 export default function PostItem(props) {
-    const { data } = props;
+    const {data} = props;
+    const [comments, setComments] = useState([]);
+    const [comment, setComment] = useState("");
+    useEffect( () => {
+        let unSubscribe;
+        if (props.postId) {
+            const q = query(
+                collection(db, "posts", props.postId, "comments")
+            );
+            unSubscribe = onSnapshot(q, (snapshot) => {
+                setComments(
+                    snapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        cmt: doc.data(),
+                    }))
+                );
+            })
+        }
+        return () => {
+            unSubscribe();
+        };
+    }, [props.postId]);
+
+    const submitComment = async (e) => {
+        e.preventDefault();
+        const newCmt = collection(db, "posts", props.postId, "comments")
+        await addDoc(newCmt,
+            {
+                comment: comment,
+                username: props.user.displayName,
+                timestamp: serverTimestamp(),
+            })
+        setComment("");
+    };
+
     return (
         <div className="post__container">
             {/* Header -> Username + Avatar + Local */}
             <div className="post__header">
                 <div className="post__header--block-left">
                     <div className="post__header--avatar">
-                        <Avatar alt="Remy Sharp" src={data.avatarUrl} />
+                        <Avatar alt="Remy Sharp" src={data.avatarUrl}/>
                     </div>
                 </div>
                 <div className="post__header--block-right">
@@ -25,7 +62,7 @@ export default function PostItem(props) {
             </div>
             {/* image */}
             <div className="post__image">
-                <img src={data.imageUrl} alt="p-1" />
+                <img src={data.imageUrl} alt="p-1"/>
             </div>
             <div className="post__group-bottom">
                 {/* Group of interactive icons */}
@@ -67,14 +104,33 @@ export default function PostItem(props) {
                     {/* Time */}
                     <p className="post__caption--time"><span>1</span> Ngày trước</p>
                 </div>
+                <div className="post__comment--list">
+                    {comments.map(({id, cmt}) => (
+                        <p key={id} className="post__comment--item">
+                            <b>{cmt.username}</b> {cmt.comment}
+                        </p>
+                    ))}
+                </div>
                 {/* input field for comment */}
                 <div className="post__comment">
                     <form>
-                <span>
-                    <i className='bx bx-smile'></i>
-                </span>
-                        <input type="text" placeholder="Thêm bình luận..." />
-                        <button className="btn btn-post-comment">Đăng</button>
+                        <span>
+                            <i className="bx bx-smile"></i>
+                        </span>
+                        <input
+                            value={comment}
+                            type="text"
+                            placeholder="Thêm bình luận..."
+                            onChange={(e) => setComment(e.target.value)}
+                        />
+                        <button
+                            type="submit"
+                            disabled={!comment}
+                            className="btn btn-post-comment"
+                            onClick={submitComment}
+                        >
+                            Đăng
+                        </button>
                     </form>
                 </div>
             </div>

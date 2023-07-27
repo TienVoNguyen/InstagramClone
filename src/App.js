@@ -169,7 +169,7 @@ function App() {
             {/* Posts */}
             <div className="Post__list">
                 {posts.map(({ id, post }) => (
-                    <PostItem key={id} data={post} />
+                    <PostItem key={id} postId={id} user={user} data={post} />
                 ))}
             </div>
             {/* Modal sign up */}

@@ -145,3 +145,16 @@
     color: #0095f6;
     font-weight: 600;
 }
+
+/* comment list */
+.post__comment--list {
+    padding: 0 16px;
+}
+
+.post__comment--list b {
+    color: rgba(38, 38, 38, 0.85);
+}
+
+.post__comment--item {
+    margin-bottom: 10px;
+}

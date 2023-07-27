@@ -10,9 +10,11 @@ import {
     signInWithEmailAndPassword,
     updateProfile,
     serverTimestamp,
-    storageRef
+    ref,
+    uploadBytesResumable,
+    getDownloadURL
 } from './firebaseConfig';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import Modal from "@mui/material/Modal";
 import { Button, Input } from "@mui/material";
 import Box from "@mui/material/Box";
@@ -117,15 +119,12 @@ function App() {
     }
 
     const handleChangeFile = (e) => {
-        console.log(e.target, ',e')
-        setImage(e.target)
+        setImage(e.target.files[0])
     }
 
     const handleUpload = () => {
-        const metadata = {
-            contentType: 'image/jpeg'
-        };
-        const uploadTask = storageRef.child(`images/${image.name}`).put(image, metadata);
+        const storageRef = ref(storage, `images/${image.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, image);
 
         uploadTask.on(
             "state_changed",
@@ -142,10 +141,11 @@ function App() {
             },
             () => {
                 //handle when complete
-                storage.ref("images").child(image.name).getDownloadURL().then(
-                    url => {
+                getDownloadURL(uploadTask.snapshot.ref).then(
+                    async url => {
                         //Save link image in db of firebase
-                        db.collection('posts').add(
+                        const newPost = doc(collection(db, 'posts'))
+                        await setDoc(newPost,
                             {
                                 timestamp: serverTimestamp(),
                                 caption: caption,
